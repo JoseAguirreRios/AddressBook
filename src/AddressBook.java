@@ -13,7 +13,15 @@ public class AddressBook {
         load();
     }
 
-    // Cargar contactos desde el archivo
+    // Formatear número de teléfono
+    private String formatPhoneNumber(String number) {
+        if (number.length() == 10) {
+            return "(" + number.substring(0, 3) + ") " + number.substring(3, 6) + "-" + number.substring(6);
+        }
+        return number;
+    }
+
+    // Cargar contactos desde el archivo txt
     public void load() {
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
             String line;
@@ -26,7 +34,7 @@ public class AddressBook {
         }
     }
 
-    // Guardar contactos en el archivo
+    // Guardar contactos en el archivo txt
     public void save() {
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(filePath))) {
             for (Map.Entry<String, String> entry : contacts.entrySet()) {
@@ -38,24 +46,43 @@ public class AddressBook {
         }
     }
 
-    // Listar contactos
+    // Lista de Contactos
     public void list() {
-        System.out.println("Contactos:");
-        for (Map.Entry<String, String> entry : contacts.entrySet()) {
-            System.out.println(entry.getKey() + " : " + entry.getValue());
+        if (contacts.isEmpty()) {
+            System.out.println("No hay contactos para mostrar.");
+        } else {
+            System.out.println("Contactos:");
+            int index = 1;
+            for (Map.Entry<String, String> entry : contacts.entrySet()) {
+                System.out.println(index + ". " + formatPhoneNumber(entry.getKey()) + " : " + entry.getValue());
+                index++;
+            }
         }
     }
 
     // Crear un nuevo contacto
     public void create(String number, String name) {
-        contacts.put(number, name);
-        save();
+        number = formatPhoneNumber(number.replaceAll("[^0-9]", ""));
+        if (number.isEmpty() || name.isEmpty()) {
+            System.out.println("El número y el nombre no pueden estar vacíos.");
+        } else {
+            contacts.put(number, name);
+            save();
+            System.out.println("Contacto creado exitosamente.");
+        }
     }
 
     // Borrar un contacto
-    public void delete(String number) {
-        contacts.remove(number);
+    public void delete(int index) {
+        if (index <= 0 || index > contacts.size()) {
+            System.out.println("Índice inválido. Intente nuevamente.");
+            return;
+        }
+
+        String keyToRemove = (String) contacts.keySet().toArray()[index - 1];
+        contacts.remove(keyToRemove);
         save();
+        System.out.println("Contacto eliminado exitosamente.");
     }
 
     // Menú interactivo
@@ -69,7 +96,7 @@ public class AddressBook {
             System.out.println("4. Salir");
             System.out.print("Elija una opción: ");
             int option = scanner.nextInt();
-            scanner.nextLine();  // Limpiar el buffer
+            scanner.nextLine();
 
             switch (option) {
                 case 1:
@@ -83,9 +110,10 @@ public class AddressBook {
                     create(number, name);
                     break;
                 case 3:
-                    System.out.print("Ingrese el número de contacto a eliminar: ");
-                    number = scanner.nextLine();
-                    delete(number);
+                    list();
+                    System.out.print("Ingrese el número del contacto a eliminar: ");
+                    int index = scanner.nextInt();
+                    delete(index);
                     break;
                 case 4:
                     return;
